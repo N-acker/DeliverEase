@@ -79,43 +79,43 @@ class UberDirectService
     }
 
 
-    public function createDelivery($quoteId, $quoteData) //quote_id is extracted from API and returned as JSON
+    public function createDelivery(array $data) //quote_id is extracted from API and returned as JSON
     {
         $token = $this->getAccessToken();
 
         $payload = [
-        "quote_id" => $quoteId,
-        "pickup_address" => $quoteData['pickup_address'],
-        "pickup_latitude" => 43.6487,
-        "pickup_longitude" => -79.38544,
-        "pickup_name" => "Store Staff",
-        "pickup_phone_number" => "+14165555555",
+           "quote_id" => $data['quote_id'],
+            "pickup_address" =>  $data['pickup_address'],
+            "pickup_latitude" => $data['pickup_latitude'],
+            "pickup_longitude" => $data['pickup_longitude'],
+            "pickup_name" => $data['pickup_name'],
+            "pickup_phone_number" => $data['pickup_phone_number'],
 
-        "dropoff_address" => $quoteData['dropoff_address'],
-        "dropoff_latitude" => 43.6662,
-        "dropoff_longitude" => -79.4097,
-        "dropoff_name" => "John Doe", //hardcoded
-        "dropoff_phone_number" => "+14165555555", //possibly db (according to pickupaddress)
+            "dropoff_address" => $data['dropoff_address'],
+            "dropoff_latitude" => $data['dropoff_latitude'],
+            "dropoff_longitude" => $data['dropoff_longitude'],
+            "dropoff_name" => $data['dropoff_name'], 
+            "dropoff_phone_number" => $data['dropoff_phone_number'],
 
-        "manifest_items" => [ //should be a chart/cluster on its own
-            [
-                "name" => "Tennis Balls",
-                "quantity" => 2,
-                "size" => "medium",
-                "dimensions" => [
-                    "length" => 20,
-                    "height" => 10,
-                    "depth" => 10
-                ],
-                "price" => 1099,
-                "must_be_upright" => false,
-                "weight" => 1,
-                "vat_percentage" => 13
-            ]
-        ],
-        "manifest_total_value" => 5000,
-        "external_store_id" => $this->externalStoreId //possibly db (according to pickupaddress)
-    ];
+            "manifest_items" => [ //should be a chart/cluster on its own
+                [
+                    "name" => "Tennis Balls",
+                    "quantity" => 2,
+                    "size" => "medium",
+                    "dimensions" => [
+                        "length" => 20,
+                        "height" => 10,
+                        "depth" => 10
+                    ],
+                    "price" => 1099,
+                    "must_be_upright" => false,
+                    "weight" => 1,
+                    "vat_percentage" => 13
+                ]
+            ],
+            "manifest_total_value" => $data['manifest_total_value'],
+            "external_store_id" => $data['external_store_id'],
+        ];
 
         
         $response =  Http::withToken($token)

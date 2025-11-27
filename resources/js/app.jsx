@@ -6,6 +6,7 @@ import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import OrderForm from "./components/OrderForm";
 import CustomerInfoPage from './components/CustomerInfoPage';
 import { CheckoutProvider } from './context/CheckoutContext';
+import OrderComplete from './components/OrderComplete';
 
 function App(){
     return (
@@ -14,6 +15,7 @@ function App(){
             <Routes>
                 <Route path="/" element={<OrderForm />}></Route>
                 <Route path="/info" element={<CustomerInfoPage />}></Route>
+                <Route path="/congrats" element={<OrderComplete />}></Route>
             </Routes>
           </CheckoutProvider>    
        </Router>

@@ -29,8 +29,7 @@ class UberDirectController extends Controller
         $manifestTotalValue = $request->input('manifest_total_value');
         $externalStoreId = $request->input('external_store_id');
 
-            // Pass it to UberService
-        $quote = app(UberDirectService::class)->getQuote([
+        $data = [
         'pickup_address' => $pickupAddress,
         'dropoff_address' => $dropoffAddress,
         'pickup_latitude' => $pickupLat,
@@ -41,7 +40,10 @@ class UberDirectController extends Controller
         'dropoff_phone_number' => $dropoffPhoneNumber,
         'manifest_total_value' => $manifestTotalValue,
         'external_store_id' => $externalStoreId,
-        ]);
+        ];
+
+            // Pass it to UberService
+        $quote = app(UberDirectService::class)->getQuote($data);
 
         return response()->json($quote);
 
@@ -49,7 +51,44 @@ class UberDirectController extends Controller
 
     public function bookDelivery(Request $request) //getting the quoteId by calling the createDelivery method in UberDirectService
     {
-      
+        $quoteId = $request->input('quote_id');
+        $dropoffAddress = $request->input('dropoff_address');
+        $pickupAddress = $request->input('pickup_address');
+        $pickupLat = $request->input('pickup_latitude');
+        $pickupLng = $request->input('pickup_longitude');
+        $dropOffLat = $request->input('dropoff_latitude');
+        $dropOffLng = $request->input('dropoff_longitude');
+        $pickupPhoneNumber = $request->input('pickup_phone_number');
+        $dropoffPhoneNumber = $request->input('dropoff_phone_number');
+        $manifestTotalValue = $request->input('manifest_total_value');
+        $externalStoreId = $request->input('external_store_id');
+        $manifest_items = $request->input('manifest_items');
+        $pickupName = $request->input('pickup_name');
+        $dropoffName = $request->input('dropoff_name');
+
+
+      $payload = [
+        "quote_id" => $quoteId,
+        "pickup_address" => $pickupAddress,
+        "pickup_latitude" => $pickupLat,
+        "pickup_longitude" => $pickupLng,
+        "pickup_name" => $pickupName,
+        "pickup_phone_number" => $pickupPhoneNumber,
+
+        "dropoff_address" => $dropoffAddress,
+        "dropoff_latitude" => $dropOffLat,
+        "dropoff_longitude" => $dropOffLng,
+        "dropoff_name" => $dropoffName, 
+        "dropoff_phone_number" => $dropoffPhoneNumber,
+
+        "manifest_items" => $manifest_items,
+        "manifest_total_value" => $manifestTotalValue,
+        "external_store_id" => $externalStoreId 
+    ];
+
+      $deliveryResponse = $this->uberService->createDelivery($payload);
+
+      return response()->json($deliveryResponse);
     }
 
     // public function testUber()

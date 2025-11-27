@@ -7,28 +7,46 @@ const CheckoutContext = createContext(); //first context is created
 // it's used to provide all component elements with the variables
 export function CheckoutProvider({ children }){
     //useState for the variables below will be used here instead of the component
-    const [cart, setCart] = useState([]);
-    const [selectedStore, setSelectedStore] = useState("");
+    const [cartInfo, setCartInfo] = useState({
+        cart: [],
+        totalBeforeTax: null, //before tax
+        manifestTotal: null //after tax
+    });
+    // const [selectedStore, setSelectedStore] = useState("");
+    // const [storeLatLng, setStoreLatLng] = useState({lat: "", lng: ""});
+    // const [destLatLng, setDestLatLng] = useState({lat: null, lng: null});
+    const [quoteResponse, setQuoteResponse] = useState(null);
     const [quote, setQuote] = useState(null);
-    const [storeLatLng, setStoreLatLng] = useState({lat: "", lng: ""});
-    const [form, setForm] = useState({
+    const [customerInfo, setCustomerInfo] = useState({
         name: "",
         phone: "",
         address: "",
+        coordinates: {
+            lat: null,
+            lng: null,
+          },
     });
-    const [destLatLng, setDestLatLng] = useState({lat: "", lng: ""});
+    const [selectedStoreInfo, setSelectedStoreInfo] = useState({
+        store_id: null,
+        address: "",
+        phone: "",
+        coordinates: {
+            lat: null,
+            lng: null,
+          },
+        });
+    
         
 
     return ( //the context value is being provided
         // provider makes context value available to all child components
         //any component in <CheckoutProvider> can access shared state(cart, selectedStore, etc.) using context
         <CheckoutContext.Provider value={{
-            cart, setCart, 
-            selectedStore, setSelectedStore,
-            quote, setQuote, 
-            storeLatLng, setStoreLatLng,
-            form, setForm,
-            destLatLng, setDestLatLng,
+            cartInfo, setCartInfo,
+            selectedStoreInfo, setSelectedStoreInfo,
+            customerInfo, setCustomerInfo,
+            quoteResponse, setQuoteResponse, 
+            quote, setQuote
         }}>
             {children} {/* is a prop in react representing; props=properties;
             children lets you nest components inside provider and provider 

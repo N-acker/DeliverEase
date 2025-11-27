@@ -4,16 +4,20 @@ import { useNavigate } from "react-router-dom"; //allows us to navigate to the n
 import { useCheckout } from "../context/CheckoutContext"; //allows us to access the CheckoutConext
 
 export default function OrderForm() {
-    const [stores, setStores] = useState([]);
-    const [menuItems, setMenuItems] = useState([]);
+    const [stores, setStores] = useState([]); // stores are pulled from the db 
+    const [menuItems, setMenuItems] = useState([]); // menu items are pulled from the db
     const [selectedItem, setSelectedItem] = useState("");
     const [quantity, setQuantity] = useState(1);
     const navigate = useNavigate();
     const {
-        cart, setCart,
-        selectedStore, setSelectedStore,
-        storeLatLng, setStoreLatLng,
+        cartInfo, setCartInfo,
+        selectedStoreInfo, setSelectedStoreInfo,
     } = useCheckout();
+
+
+    // cart, setCart,
+    //     selectedStore, setSelectedStore,
+    //     storeLatLng, setStoreLatLng,
     // the variables above are used within the context to be shared across all components
 
     const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
@@ -30,27 +34,47 @@ export default function OrderForm() {
             .then((data) => setMenuItems(data))
     }, []);
 
+    // updates total when cart changes 
+    useEffect(() => {
+
+        const beforeTax = cartInfo.cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
+        const afterTax = Math.round(beforeTax * 1.13);
+
+        setCartInfo(prev => ( {
+            ...prev, 
+            totalBeforeTax: beforeTax,
+            manifestTotal: afterTax 
+            }
+        ));
+
+    }, [cartInfo.cart]);
+
     const addItem = () => {
         if(!selectedItem ||quantity <= 0) return;
         const item = menuItems.find((m) => m.id == selectedItem);
-        setCart([...cart, { ...item, quantity }]); //you're basically saying I want all the items in teh cart (...cart) and the new object with the item adn quanitity in it
+        setCartInfo(prev => ({
+            ...prev,
+            cart: [...prev.cart, { ...item, quantity }],
+
+        })); //you're basically saying I want all the items in the cart (...cart) and the new object with the item(along with all its properties which is where ... comes from) and quantity in it
         setSelectedItem("");
         setQuantity(1);
     };
 
     const removeItem = (index) => {
-        setCart(cart.filter((_, i) => i != index)); //_ is the current item and i is the index of the current item
-    };
-
-    const calculateTotal = () => {
-        return cart.reduce((sum, item) => sum + item.price * item.quantity, 0); // 0 is the initial value of sum
+        setCartInfo(prev => ({
+            ...prev,
+            cart: prev.cart.filter((_, i) => i != index), //This way you’re replacing the cart property inside cartInfo with a new array where the item at that index has been removed.
+        
+        })); //_ is the current item and i is the index of the current item; we filter items that have index i != index
     };
 
     const handleStoreSelect = async (e) => {
-        const id = e.target.value;
-        setSelectedStore(id);
 
-        const store = stores.find((s) => s.id == id);
+        const store_id = e.target.value;
+
+        const store = stores.find((s) => s.external_store_id == store_id);
+
 
         if(!store) return;
 
@@ -60,8 +84,21 @@ export default function OrderForm() {
         const location = data.results?.[0]?.geometry?.location;
 
         if(location) {
-            setStoreLatLng(location);
-            console.log("lat/lng:", location);
+            setSelectedStoreInfo(
+            prev => ( {
+            ...prev, 
+             address: store.address || "",
+             phone: store.phone || "",
+             store_id: store.external_store_id || null,
+             coordinates: location //basically here it's saying if location exists use the lat and lng from it otherwise use the previous coordinates
+              ? {
+                lat: location.lat,
+                lng: location.lng,
+                }
+              : prev.coordinates,
+
+            }));
+            // console.log("lat/lng:", location);
         }
     };
 
@@ -69,25 +106,30 @@ export default function OrderForm() {
 
         <div className="p-6 max-w-lg mx-auto border w-full mb-4 mt-4">
 
-            <h1 className="text-2xl mb-4 flex items-center">
+            <h1 className="text-4xl font-extrabold tracking-tighter italic pr-[2px] bg-gradient-to-r from-blue-600 to-indigo-500 text-transparent bg-clip-text drop-shadow-sm">
+                    DeliverEase
+            </h1>
+                
+            <h2 className="text-2xl mb-4 flex items-center">
+                powered by&nbsp;
                 <span className="text-3xl font-bold text-black mr-1 tracking-tighter" style={{ fontFamily: 'sans-serif' }}>Uber</span>
                 <span className="text-3xl font-normal text-black tracking-tight" style={{ fontFamily: 'sans-serif' }}>Direct</span>
-                <span className="font-normal text-black ml-2">Order</span>
-            </h1>
+            </h2>
+
 
              {/* Store dropdown */}
             <label className="block mb-2 ">Select Store Location:</label>
             
             <select
-                value={selectedStore}
-                onChange={handleStoreSelect}
+                value={selectedStoreInfo.external_store_id} //this value must match the value of the selected option 
+                onChange={handleStoreSelect} //here all the information pertaining to each store is set in the context within handleStoreSelect
                 className="border p-2 w-full mb-4"
             >
 
                 <option value="">-- Choose a store location --</option>
 
                 {stores.map((store) => (
-                    <option key={store.id} value={store.id}>
+                    <option key={store.id} value={store.external_store_id}> {/*the store consists id, address, external_store_id and phone */}
                         {store.address}
                     </option>
                 ))}
@@ -130,19 +172,21 @@ export default function OrderForm() {
                 Add to Cart
             </button>
 
-            {/* Chosen Location */}
+            {/* border */}
             <div className= "max-w-lg mx-auto border w-full mb-4 mt-4 pb-4 pl-4">
+
+                {/* Chosen Location */}
                 <h2 className="text-xl mt-6">Store Location:</h2>
-                {selectedStore && (
+                {selectedStoreInfo.address && ( // the first part means only show block if selectedStoreInfo.address exists
                 <div className="mb-2">
-                    {stores.find((s) => s.id == selectedStore)?.address || ""}
+                    {selectedStoreInfo.address}
                 </div>
                 )}
 
             {/* Cart */}    
                 <h2 className="text-xl mt-6">Cart:</h2>
                 <ul className="mb-4">
-                    {cart.map((c, idx) => ( // c is the current item in the cart and idx is the current index of the item in the cart
+                    {cartInfo.cart.map((c, idx) => ( // c is the current item in the cart and idx is the current index of the item in the cart
                         <li key={idx} > {/* key is the unique identifier of every item in the map*/}  
                             <span>
                                 {c.quantity} × {c.name} (${(c.price / 100).toFixed(2)})
@@ -157,20 +201,21 @@ export default function OrderForm() {
                     ))}
                 </ul>
 
-                <h2 className="text-xl mt-6">Subtotal:</h2>
+                <h2 className="text-xl mt-6">Cart Totals:</h2>
                 <div className="mb-2">
-                    ${(calculateTotal()/100).toFixed(2)}
+                    <div>Subtotal: ${((cartInfo.totalBeforeTax || 0) / 100).toFixed(2)}</div>
+                    <div>HST: ${(((cartInfo.manifestTotal || 0) - (cartInfo.totalBeforeTax || 0)) / 100).toFixed(2)}</div>
+                    <div>Total: ${((cartInfo.manifestTotal || 0) / 100).toFixed(2)}</div>
                 </div>
 
                 <button
                     type="button"
                     onClick={() => {
-                        if(!selectedStore || cart.length === 0) return alert("Missing info");
+                        if(!selectedStoreInfo.address || cartInfo.cart.length === 0) return alert("Missing info");
                         //if the selected store or cart isn't empty navigate to info
                         navigate("info");
-                        console.log("cart:", cart);
-                        console.log("store:", selectedStore);
-                        console.log("storetLatLng:", storeLatLng)
+                        console.log("cartInfo:", cartInfo);
+                        console.log("storeInfo:", selectedStoreInfo);
                     }}
                     className="bg-black text-white px-4 py-2 rounded mt-6 hover:bg-gray-800 hover:shadow cursor-pointer"
                 >
