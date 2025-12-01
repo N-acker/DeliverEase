@@ -37,7 +37,7 @@ export default function OrderForm() {
     // updates total when cart changes 
     useEffect(() => {
 
-        const beforeTax = cartInfo.cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
+        const beforeTax = cartInfo.cart.reduce((sum, item) => sum + item.price * item.quantity, 0); //The reduce() method, found in various programming languages like JavaScript and Python, is a powerful function used to process an iterable (such as an array or list) and condense it into a single, accumulated value.
         const afterTax = Math.round(beforeTax * 1.13);
 
         setCartInfo(prev => ( {
@@ -52,9 +52,10 @@ export default function OrderForm() {
     const addItem = () => {
         if(!selectedItem ||quantity <= 0) return;
         const item = menuItems.find((m) => m.id == selectedItem);
+        const qty = Number(quantity) //store quantity as a number 
         setCartInfo(prev => ({
             ...prev,
-            cart: [...prev.cart, { ...item, quantity }],
+            cart: [...prev.cart, { ...item, quantity: qty }],
 
         })); //you're basically saying I want all the items in the cart (...cart) and the new object with the item(along with all its properties which is where ... comes from) and quantity in it
         setSelectedItem("");

@@ -17,6 +17,7 @@ export function CheckoutProvider({ children }){
     // const [destLatLng, setDestLatLng] = useState({lat: null, lng: null});
     const [quoteResponse, setQuoteResponse] = useState(null);
     const [quote, setQuote] = useState(null);
+    const [bookingResponse, setBookingResponse] = useState(null);
     const [customerInfo, setCustomerInfo] = useState({
         name: "",
         phone: "",
@@ -46,7 +47,8 @@ export function CheckoutProvider({ children }){
             selectedStoreInfo, setSelectedStoreInfo,
             customerInfo, setCustomerInfo,
             quoteResponse, setQuoteResponse, 
-            quote, setQuote
+            quote, setQuote,
+            bookingResponse, setBookingResponse
         }}>
             {children} {/* is a prop in react representing; props=properties;
             children lets you nest components inside provider and provider 
