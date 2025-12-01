@@ -11,7 +11,8 @@ export default function CustomerInfoPage() {
     selectedStoreInfo, setSelectedStoreInfo,
     customerInfo, setCustomerInfo,
     quoteResponse, setQuoteResponse,
-    quote, setQuote
+    quote, setQuote,
+    bookingResponse, setBookingResponse
   } = useCheckout();
 
   const navigate = useNavigate();
@@ -85,7 +86,7 @@ export default function CustomerInfoPage() {
     try {
       const response = await axios.post('/api/uber/quote', params);
       setQuoteResponse(response.data); //here we set up the quote in our context
-      console.log('Quote generated:', quoteResponse);
+      console.log('Quote generated:', response.data);
     } catch (error) {
       console.error('Error generating quote', error.response?.data || error.message);
       return null;
@@ -139,18 +140,47 @@ export default function CustomerInfoPage() {
   ]);
   // the useEffect is triggered when the above have a change to them
 
+
   const handleCreateOrder = async () => {
+
+     const manifest_items = cartInfo.cart.map(item => ({
+      name: item.name,
+      quantity: item.quantity,
+      price: item.price,         
+      size: "medium",
+    }));
+
+     const params = {
+      quote_id: quoteResponse?.id,
+      pickup_address: quote?.pickup_address,
+      pickup_latitude: quote?.pickup_latitude,
+      pickup_longitude: quote?.pickup_longitude,
+      pickup_name: "John Doe",
+      pickup_phone_number: quote?.pickup_phone_number,
+      dropoff_address: quote?.dropoff_address,
+      dropoff_latitude: quote?.dropoff_latitude,
+      dropoff_longitude: quote?.dropoff_longitude,
+      dropoff_name: customerInfo?.name,
+      dropoff_phone_number: quote?.dropoff_phone_number,
+      manifest_items: manifest_items,
+      manifest_total_value: cartInfo.totalBeforeTax,
+      external_store_id: selectedStoreInfo.external_store_id,
+    };
+
 
      try {
       const response = await axios.post('/api/uber/book', params);
-      setQuoteResponse(response.data); //here we set up the quote in our context
-      console.log('Quote generated:', quoteResponse);
+      await setBookingResponse(response.data); //here we set up the quote in our context
+      console.log('Delivery Created:', response.data)
     } catch (error) {
       console.error('Error generating quote', error.response?.data || error.message);
       return null;
     }
     navigate("/congrats");
   }
+
+
+
 
   return (
     <div className="p-6 max-w-lg mx-auto border w-full mb-4 mt-4">
@@ -187,7 +217,7 @@ export default function CustomerInfoPage() {
 
       {hasQuote && (<button
         onClick={handleCreateOrder}
-        className="bg-black text-white px-4 py-2 mt-4 rounded"
+        className="bg-black text-white px-4 py-2 rounded mt-6 hover:bg-gray-800 hover:shadow cursor-pointer"
       >
         Create Delivery
       </button>
