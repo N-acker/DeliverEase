@@ -14,6 +14,8 @@ export default function CustomerInfoPage() {
     quote, setQuote
   } = useCheckout();
 
+  const [quoteError, setQuoteError] = useState(null);
+
   const navigate = useNavigate();
 
   // useRef is for storing values that persist across renders
@@ -24,18 +26,18 @@ export default function CustomerInfoPage() {
 
     let value = e.target.value;
 
-    if (e.target.name === 'phone') {
-      // keep display formatted, but limit to digits for formatting
-      // all this does is format the number so that's it's good to be sent in
-      let digits = value.replace(/\D/g, '').slice(0, 10); // max 10 digits (NANP)
-      if (digits.length <= 3) {
-        value = digits;
-      } else if (digits.length <= 6) {
-        value = `(${digits.slice(0,3)}) ${digits.slice(3)}`;
-      } else {
-        value = `(${digits.slice(0,3)}) ${digits.slice(3,6)}-${digits.slice(6)}`;
-      }
-    }
+    // if (e.target.name === 'phone') {
+    //   // keep display formatted, but limit to digits for formatting
+    //   // all this does is format the number so that's it's good to be sent in
+    //   let digits = value.replace(/\D/g, '').slice(0, 10); // max 10 digits (NANP)
+    //   if (digits.length <= 3) {
+    //     value = digits;
+    //   } else if (digits.length <= 6) {
+    //     value = `(${digits.slice(0,3)}) ${digits.slice(3)}`;
+    //   } else {
+    //     value = `(${digits.slice(0,3)}) ${digits.slice(3,6)}-${digits.slice(6)}`;
+    //   }
+    // }
 
     setCustomerInfo({ ...customerInfo, [e.target.name]: e.target.value }); //THIS RIGHT HERE IS WHERE NAME AND VALUE COME IN HANDY
 
@@ -43,6 +45,7 @@ export default function CustomerInfoPage() {
 
   const handleGenerateQuote = async () => {
 
+    setQuoteError(null); //resets quote error message
      // guard: require necessary inputs
     if (
       !selectedStoreInfo?.address ||
@@ -57,11 +60,11 @@ export default function CustomerInfoPage() {
     }
 
      // clean phone for API (remove formatting)
-    const dropoffPhoneDigits = (customerInfo.phone || '').replace(/\D/g, '');
-    if (dropoffPhoneDigits.length < 10) {
-      console.warn('Phone invalid for quote:', customerInfo.phone, dropoffPhoneDigits);
-      return null; // or show UI error to user
-    }
+    // const dropoffPhoneDigits = (customerInfo.phone || '').replace(/\D/g, ''); //replaces 
+    // if (dropoffPhoneDigits.length < 10) {
+    //   console.warn('Phone invalid for quote:', customerInfo.phone, dropoffPhoneDigits);
+    //   return null; // or show UI error to user
+    // }
 
     const params = {
         pickup_address: selectedStoreInfo.address,
@@ -84,17 +87,32 @@ export default function CustomerInfoPage() {
 
     try {
       const response = await axios.post('/api/uber/quote', params);
-      setQuoteResponse(response.data); //here we set up the quote in our context
-      console.log('Quote generated:', quoteResponse);
+      console.log('Quote generated:', response.data);
+
+      const data = response.data;
+
+      // Uber error payloads look like { kind: "error", code, message, metadata }
+      if (data?.kind === 'error' || data?.code === 'invalid_params' || data?.code === 'address_undeliverable') {
+        setQuoteError({
+          code: data.message || 'quote_error',
+          message: data.metadata?.details || data.metadata?.dropoff_phone_number || 'Quote failed',
+        });
+        setQuoteResponse(null);
+        return;
+      }
+
+      setQuoteError(null);
+      setQuoteResponse(data); //here we set up the quote in our context
+
     } catch (error) {
       console.error('Error generating quote', error.response?.data || error.message);
-      return null;
+      return;
     } finally {
       inFlightRef.current = false;
     }
   };
 
-  const hasQuote = quoteResponse?.fee != null;
+  const hasQuote = quoteResponse?.fee != null; //hasQuote is a boolean value
 
   // auto-generate quote when required inputs are present (debounced)
   useEffect(() => {
@@ -144,7 +162,7 @@ export default function CustomerInfoPage() {
      try {
       const response = await axios.post('/api/uber/book', params);
       setQuoteResponse(response.data); //here we set up the quote in our context
-      console.log('Quote generated:', quoteResponse);
+      console.log('Quote generated:', response.data);
     } catch (error) {
       console.error('Error generating quote', error.response?.data || error.message);
       return null;
@@ -184,13 +202,19 @@ export default function CustomerInfoPage() {
         placeholder="Phone Number"
         className="border p-2 w-full mb-2"
       />
-
-      {hasQuote && (<button
-        onClick={handleCreateOrder}
-        className="bg-black text-white px-4 py-2 mt-4 rounded"
-      >
-        Create Delivery
-      </button>
+        
+      { quoteError ? (
+         <div className="text-red-600 mt-4">
+          {quoteError.code}; {quoteError.message}
+        </div>
+      ) : (
+        hasQuote && (<button
+          onClick={handleCreateOrder}
+          className="bg-black text-white px-4 py-2 mt-4 rounded"
+        >
+          Create Delivery
+        </button>
+        )
       )}
 
       {/* Cart */}    
