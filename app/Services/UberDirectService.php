@@ -97,23 +97,8 @@ class UberDirectService
             "dropoff_name" => $data['dropoff_name'], 
             "dropoff_phone_number" => $data['dropoff_phone_number'],
 
-            "manifest_items" => [ //should be a chart/cluster on its own
-                [
-                    "name" => "Tennis Balls",
-                    "quantity" => 2,
-                    "size" => "medium",
-                    "dimensions" => [
-                        "length" => 20,
-                        "height" => 10,
-                        "depth" => 10
-                    ],
-                    "price" => 1099,
-                    "must_be_upright" => false,
-                    "weight" => 1,
-                    "vat_percentage" => 13
-                ]
-            ],
-            "manifest_total_value" => $data['manifest_total_value'],
+            "manifest_items" => $data['manifest_items'],
+            "manifest_total_value" => $data['manifest_total_value'], //is the value of all the items not including the uber direct fee and taxes unless included in the price
             "external_store_id" => $data['external_store_id'],
         ];
 
@@ -121,7 +106,15 @@ class UberDirectService
         $response =  Http::withToken($token)
         ->post("{$this->baseUrl}/v1/customers/{$this->customerId}/deliveries", $payload);
 
-         Log::info('Create Delivery response:', $response->json());
+        Log::info('Create delivery response', [
+        'status' => $response->status(),
+        'json'   => $response->json(),
+        'body'   => $response->body(),
+        ]);
+
+        if ($response->failed()) {
+            return ['error' => 'create_delivery_failed', 'status' => $response->status(), 'body' => $response->json() ?? $response->body()];
+        }
 
         return $response->json();
     }
